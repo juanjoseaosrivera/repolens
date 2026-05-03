@@ -1,0 +1,72 @@
+[project]
+name = "repolens"
+version = "0.1.0"
+description = "Code repository analysis via RAG, knowledge graphs, and agentic reasoning."
+authors = [
+    { name = "v0soft", email = "juanjoseaos@hotmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.97.0",
+    "openai>=2.33.0",
+    "python-dotenv>=1.2.2",
+]
+
+[project.scripts]
+repolens-hello = "repolens.hello:main"
+
+[build-system]
+requires = ["uv_build>=0.9.22,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+    "jupyterlab>=4.5.7",
+    "mypy>=1.20.2",
+    "numpy>=2.4.4",
+    "pre-commit>=4.6.0",
+    "pytest>=9.0.3",
+    "pytest-mock>=3.15.1",
+    "ruff>=0.15.12",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
