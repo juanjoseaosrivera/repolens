@@ -7,13 +7,20 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.13",
     "anthropic>=0.97.0",
     "openai>=2.33.0",
+    "pathspec>=0.12",
+    "pgvector>=0.3",
+    "psycopg[binary]>=3.2",
     "python-dotenv>=1.2.2",
+    "sqlalchemy>=2.0",
+    "typer>=0.12",
 ]
 
 [project.scripts]
 repolens-hello = "repolens.hello:main"
+repolens = "repolens.cli:app"
 
 [build-system]
 requires = ["uv_build>=0.9.22,<0.10.0"]
@@ -27,6 +34,7 @@ dev = [
     "numpy>=2.4.4",
     "pre-commit>=4.6.0",
     "pytest>=9.0.3",
+    "pytest-asyncio>=0.24",
     "pytest-mock>=3.15.1",
     "ruff>=0.15.12",
 ]
@@ -66,7 +74,20 @@ disallow_untyped_defs = false
 disallow_incomplete_defs = false
 check_untyped_defs = false
 
+[[tool.mypy.overrides]]
+module = ["pgvector.*", "pathspec.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
+# `pythonpath = ["src"]` is the resilient escape hatch for the iCloud-Drive
+# UF_HIDDEN issue: the editable-install .pth file gets silently hidden by
+# iCloud, breaking `import repolens` for pytest. Setting pythonpath here keeps
+# the test suite green regardless. CLI use still relies on the .pth (clear with
+# `make sync` if it gets re-hidden).
+pythonpath = ["src"]
 addopts = "-ra --strict-markers"
+markers = [
+    "integration: tests that require a running Postgres (set REPOLENS_TEST_DATABASE_URL)",
+]

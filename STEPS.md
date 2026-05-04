@@ -48,24 +48,25 @@ A `python -m repolens.hello` script that embeds "hello world" and asks Claude to
 
 ## Phase 1 — MVP: Naive RAG over a Repository
 
-**Goal:** Ingest a code repo, store chunks in Qdrant, answer "where is X?" questions. Deliberately naive — character chunking, no AST, no reranking. You need to feel the pain of naive RAG before you appreciate the fixes.
+**Goal:** Ingest a code repo, store chunks in PostgreSQL + `pgvector`, answer "where is X?" questions. Deliberately naive — character chunking, no AST, no reranking. You need to feel the pain of naive RAG before you appreciate the fixes.
 
 ### Learn
 - **The RAG loop:** chunk → embed → store → retrieve → augment prompt → generate.
 - **Chunking strategies:** fixed-size, sliding-window, recursive — and why each fails on code.
-- **Vector DB basics:** HNSW index, `top_k`, distance metrics (cosine vs. dot vs. euclidean), payload/metadata filtering.
+- **Vector search basics in Postgres:** `pgvector` extension, HNSW index, `top_k`, distance operators (`<=>` cosine, `<#>` negative inner product, `<->` L2), and SQL-side metadata filtering with `WHERE`.
 - **Prompt construction:** how to inject retrieved context without confusing the model; the "lost in the middle" problem.
 - **Failure modes:** hallucinated file paths, retrieved-but-irrelevant chunks, context window blowups.
 
 ### Implement
-1. `docker-compose.yml` with Qdrant. Document `make up` / `make down`.
-2. `src/repolens/ingest/walker.py` — walk a repo, respect `.gitignore`, skip binaries, return `(path, content)` pairs.
-3. `src/repolens/ingest/chunker_naive.py` — recursive character splitter (~1000 chars, ~200 overlap). Yes, naive on purpose.
-4. `src/repolens/ingest/pipeline.py` — orchestrate walk → chunk → embed → upsert into Qdrant with payload `{file_path, language, chunk_index}`.
-5. `src/repolens/retrieve/vector.py` — `search(query, top_k=5) -> list[Chunk]`.
-6. `src/repolens/chat/answer.py` — build a prompt: system instructions + retrieved chunks + user question. Return Claude's answer **with cited file paths**.
-7. CLI: `repolens ingest <repo_path>` and `repolens ask "<question>"`.
-8. Pick a real test repo (medium size, ~5–20k lines, e.g. `fastapi`, `httpx`, or one of your own) and ingest it.
+1. `docker-compose.yml` with Postgres 16 + `pgvector` (and `pg_trgm` enabled for Phase 2 lexical search). Document `make up` / `make down` / `make psql`.
+2. Alembic migrations (SQLAlchemy 2.x async + `psycopg` v3): `repos` table; `chunks` table with `vector(1536)` column, HNSW cosine index, and a `tsvector` column reserved for Phase 2 FTS so the table doesn't need re-migrating.
+3. `src/repolens/ingest/walker.py` — walk a repo, respect `.gitignore`, skip binaries, return `(path, content)` pairs.
+4. `src/repolens/ingest/chunker_naive.py` — recursive character splitter (~1000 chars, ~200 overlap). Yes, naive on purpose.
+5. `src/repolens/ingest/pipeline.py` — orchestrate walk → chunk → embed → upsert into Postgres with metadata columns `{file_path, language, chunk_index}` and a `(repo_id, file_path, chunk_index, content_hash)` uniqueness constraint for idempotent re-ingestion.
+6. `src/repolens/retrieve/vector.py` — `search(query, top_k=5) -> list[Chunk]` using `pgvector` cosine distance.
+7. `src/repolens/chat/answer.py` — build a prompt: system instructions + retrieved chunks (wrapped in `<retrieved_code source="...">` delimiters) + user question. Return Claude's answer **with cited file paths**.
+8. CLI: `repolens ingest <repo_path>` and `repolens ask "<question>"`.
+9. Pick a real test repo (medium size, ~5–20k lines, e.g. `fastapi`, `httpx`, or one of your own) and ingest it.
 
 ### Deliverable
 Answer US.1 ("where is authentication managed?") on your test repo. Save 5 example Q&As in `notes/phase-1-examples.md` — including the bad ones.
