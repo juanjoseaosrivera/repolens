@@ -1,0 +1,82 @@
+<div class="flex h-full flex-col">
+  <!-- Message list -->
+  <div class="flex-1 overflow-y-auto p-6">
+    @for (msg of messages(); track $index) {
+      <div class="mb-4 max-w-2xl" [class.ml-auto]="msg.role === 'user'">
+        <p class="mb-1 text-xs font-medium uppercase"
+           style="color: var(--color-text-muted)">
+          {{ msg.role }}
+        </p>
+        <div class="rounded-lg p-3 whitespace-pre-wrap"
+             [style.background]="msg.role === 'user' ? 'var(--color-primary)' : 'var(--color-surface-alt)'"
+             [style.color]="msg.role === 'user' ? '#fff' : 'var(--color-text)'">
+          {{ msg.content }}
+          @if (msg.role === 'assistant' && msg.content === '' && isStreaming()) {
+            <span class="inline-block h-4 w-2 animate-pulse rounded-sm"
+                  style="background: var(--color-text-muted)"></span>
+          }
+        </div>
+      </div>
+    } @empty {
+      <div class="flex h-full flex-col items-center justify-center gap-2">
+        @if (!repositoryId()) {
+          <p class="text-lg" style="color: var(--color-text-muted)">
+            Select a repository to get started.
+          </p>
+        } @else {
+          <p class="text-lg" style="color: var(--color-text-muted)">
+            Ask a question about your codebase.
+          </p>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Sources bar -->
+  @if (sources().length > 0) {
+    <div class="border-t px-6 py-2" style="border-color: var(--color-border); background: var(--color-surface-alt)">
+      <p class="mb-1 text-xs font-medium uppercase" style="color: var(--color-text-muted)">
+        Sources ({{ sources().length }})
+      </p>
+      <div class="flex flex-wrap gap-2">
+        @for (src of sources(); track $index) {
+          <span class="rounded px-2 py-0.5 text-xs"
+                style="background: var(--color-border); color: var(--color-text)">
+            {{ src.file_path }}:{{ src.start_line }}-{{ src.end_line }}
+          </span>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Error banner -->
+  @if (errorMessage()) {
+    <div class="border-t px-6 py-2" style="border-color: var(--color-error); background: #fef2f2">
+      <p class="text-sm" style="color: var(--color-error)">{{ errorMessage() }}</p>
+    </div>
+  }
+
+  <!-- Composer -->
+  <div class="border-t p-4" style="border-color: var(--color-border)">
+    <div class="mx-auto flex max-w-2xl gap-2">
+      <input
+        type="text"
+        class="flex-1 rounded-lg border px-4 py-2 focus:outline-none focus:ring-2"
+        style="border-color: var(--color-border); --tw-ring-color: var(--color-primary)"
+        placeholder="Ask about the codebase..."
+        [ngModel]="draft()"
+        (ngModelChange)="draft.set($event)"
+        (keydown.enter)="send()"
+        [disabled]="isStreaming()"
+      />
+      <button
+        class="rounded-lg px-4 py-2 font-medium text-white disabled:opacity-50"
+        [style.background]="isStreaming() ? 'var(--color-text-muted)' : 'var(--color-primary)'"
+        [disabled]="isStreaming() || !draft().trim()"
+        (click)="send()"
+      >
+        Send
+      </button>
+    </div>
+  </div>
+</div>

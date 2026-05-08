@@ -1,0 +1,29 @@
+<!-- Layout shell: top bar / left rail (repo selector) / chat surface / trace panel placeholder -->
+<div class="flex h-screen flex-col">
+  <!-- Top bar -->
+  <header class="flex items-center justify-between border-b px-6 py-3"
+          style="border-color: var(--color-border)">
+    <h1 class="text-lg font-semibold">RepoLens</h1>
+    <span class="text-sm" style="color: var(--color-text-muted)">v0.1.0</span>
+  </header>
+
+  <!-- Main content area -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Left rail: repository selector -->
+    <aside class="hidden w-64 overflow-y-auto border-r p-4 md:block"
+           style="border-color: var(--color-border); background: var(--color-surface-alt)">
+      <rl-repo-selector (repoSelected)="onRepoSelected($event)" />
+    </aside>
+
+    <!-- Chat surface -->
+    <main class="flex-1 overflow-auto">
+      <router-outlet />
+    </main>
+
+    <!-- Trace panel placeholder (Phase 2) -->
+    <aside class="hidden w-80 border-l p-4 lg:block"
+           style="border-color: var(--color-border); background: var(--color-surface-alt)">
+      <p class="text-sm" style="color: var(--color-text-muted)">Trace panel (Phase 2)</p>
+    </aside>
+  </div>
+</div>
