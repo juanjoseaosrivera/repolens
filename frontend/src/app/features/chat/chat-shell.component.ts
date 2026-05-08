@@ -1,24 +1,19 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { AppStateService } from '../../core/app-state.service';
+import { AppStateService, ToolCall } from '../../core/app-state.service';
 import { StreamingService } from '../../core/streaming.service';
+import type { SourceChunk } from '../traces/trace-panel.component';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-interface SourceChunk {
-  file_path: string;
-  start_line: number;
-  end_line: number;
-  score: number;
-}
-
 /**
  * Chat shell — the primary user surface.
- * Wired to the streaming backend via POST-based SSE.
+ * Supports both the simple /chat endpoint and the agent /agent/chat endpoint.
+ * Handles token, sources, tool_call_start, tool_call_result, and metrics SSE events.
  */
 @Component({
   selector: 'rl-chat-shell',
@@ -36,7 +31,8 @@ export class ChatShellComponent {
   protected readonly draft = signal('');
   protected readonly isStreaming = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
-  protected readonly sources = signal<SourceChunk[]>([]);
+  protected readonly sources = computed(() => this.state.sources());
+  protected readonly useAgent = signal(true);
 
   send(): void {
     const text = this.draft().trim();
@@ -49,41 +45,89 @@ export class ChatShellComponent {
     }
 
     this.errorMessage.set(null);
-    this.sources.set([]);
+    this.state.sources.set([]);
+    this.state.toolCalls.set([]);
+    this.state.agentMetrics.set(null);
+    this.state.focusedChunkIndex.set(null);
     this.messages.update((msgs) => [...msgs, { role: 'user', content: text }]);
     this.draft.set('');
 
-    // Add placeholder assistant message
     this.messages.update((msgs) => [
       ...msgs,
       { role: 'assistant', content: '' },
     ]);
     this.isStreaming.set(true);
 
+    const endpoint = this.useAgent() ? '/agent/chat' : '/chat';
+
     this.streaming
-      .postStream('/chat', { repository_id: repoId, question: text })
+      .postStream(endpoint, { repository_id: repoId, question: text })
       .subscribe({
         next: (data) => {
           try {
             const parsed = JSON.parse(data) as {
               type: string;
-              data: string | SourceChunk[];
+              data: unknown;
             };
 
-            if (parsed.type === 'sources') {
-              this.sources.set(parsed.data as SourceChunk[]);
-            } else if (parsed.type === 'token') {
-              this.messages.update((msgs) => {
-                const updated = [...msgs];
-                const last = updated[updated.length - 1];
-                if (last?.role === 'assistant') {
-                  updated[updated.length - 1] = {
-                    ...last,
-                    content: last.content + (parsed.data as string),
-                  };
-                }
-                return updated;
-              });
+            switch (parsed.type) {
+              case 'sources':
+                this.state.sources.set(parsed.data as SourceChunk[]);
+                break;
+
+              case 'token':
+                this.messages.update((msgs) => {
+                  const updated = [...msgs];
+                  const last = updated[updated.length - 1];
+                  if (last?.role === 'assistant') {
+                    updated[updated.length - 1] = {
+                      ...last,
+                      content: last.content + (parsed.data as string),
+                    };
+                  }
+                  return updated;
+                });
+                break;
+
+              case 'tool_call_start': {
+                const tc = parsed.data as {
+                  step: number;
+                  tool: string;
+                  input: Record<string, unknown>;
+                };
+                this.state.toolCalls.update((calls) => [
+                  ...calls,
+                  {
+                    step: tc.step,
+                    tool: tc.tool,
+                    input: tc.input,
+                    status: 'running' as const,
+                  },
+                ]);
+                break;
+              }
+
+              case 'tool_call_result': {
+                const tr = parsed.data as {
+                  step: number;
+                  tool: string;
+                  result: string;
+                };
+                this.state.toolCalls.update((calls) =>
+                  calls.map((c) =>
+                    c.step === tr.step
+                      ? { ...c, result: tr.result, status: 'done' as const }
+                      : c,
+                  ),
+                );
+                break;
+              }
+
+              case 'metrics':
+                this.state.agentMetrics.set(
+                  parsed.data as { elapsed_seconds: number; steps: number },
+                );
+                break;
             }
           } catch {
             // ignore unparseable events
@@ -99,5 +143,15 @@ export class ChatShellComponent {
           this.isStreaming.set(false);
         },
       });
+  }
+
+  toggleAgent(): void {
+    this.useAgent.update((v) => !v);
+  }
+
+  focusChunk(index: number): void {
+    this.state.focusedChunkIndex.set(index);
+    const el = document.getElementById('chunk-' + index);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }

@@ -1,0 +1,96 @@
+{
+  "description": "Agent-specific eval cases — multi-hop reasoning and refactor impact",
+  "version": "1.0.0",
+  "cases": [
+    {
+      "id": "agent-multihop-01",
+      "question": "What functions call the authentication handler, and which modules import those callers?",
+      "expected_tools": ["query_graph", "search_code"],
+      "tags": ["multi-hop", "graph"]
+    },
+    {
+      "id": "agent-multihop-02",
+      "question": "Trace the data flow from the API endpoint to the database — what functions are involved?",
+      "expected_tools": ["search_code", "query_graph"],
+      "tags": ["multi-hop", "data-flow"]
+    },
+    {
+      "id": "agent-impact-01",
+      "question": "If I change the signature of process_payment, what other modules would be affected?",
+      "expected_tools": ["query_graph"],
+      "tags": ["refactor-impact"]
+    },
+    {
+      "id": "agent-impact-02",
+      "question": "What would break if I rename the User model?",
+      "expected_tools": ["query_graph", "search_code"],
+      "tags": ["refactor-impact"]
+    },
+    {
+      "id": "agent-impact-03",
+      "question": "Show me all transitive dependencies of the main entry point",
+      "expected_tools": ["query_graph"],
+      "tags": ["refactor-impact", "graph"]
+    },
+    {
+      "id": "agent-graph-01",
+      "question": "Who calls the database connection function?",
+      "expected_tools": ["query_graph"],
+      "tags": ["graph", "callers"]
+    },
+    {
+      "id": "agent-graph-02",
+      "question": "What does the config module define?",
+      "expected_tools": ["query_graph"],
+      "tags": ["graph", "definitions"]
+    },
+    {
+      "id": "agent-graph-03",
+      "question": "Which files import the models module?",
+      "expected_tools": ["query_graph"],
+      "tags": ["graph", "imports"]
+    },
+    {
+      "id": "agent-readfile-01",
+      "question": "Show me the full content of the main application file",
+      "expected_tools": ["read_file"],
+      "tags": ["read-file"]
+    },
+    {
+      "id": "agent-readfile-02",
+      "question": "I need to see the complete test configuration",
+      "expected_tools": ["search_code", "read_file"],
+      "tags": ["read-file", "multi-step"]
+    },
+    {
+      "id": "agent-combined-01",
+      "question": "How is error handling implemented, and which API endpoints use the error handler?",
+      "expected_tools": ["search_code", "query_graph"],
+      "tags": ["multi-hop", "combined"]
+    },
+    {
+      "id": "agent-combined-02",
+      "question": "Find the authentication middleware and show me every route that uses it",
+      "expected_tools": ["search_code", "query_graph"],
+      "tags": ["multi-hop", "combined"]
+    },
+    {
+      "id": "agent-combined-03",
+      "question": "What logging is done in the ingestion pipeline? Show me the relevant code and all callers of the pipeline.",
+      "expected_tools": ["search_code", "query_graph"],
+      "tags": ["multi-hop", "combined"]
+    },
+    {
+      "id": "agent-combined-04",
+      "question": "Find the database schema and show me every API endpoint that reads from or writes to the database",
+      "expected_tools": ["search_code", "query_graph", "read_file"],
+      "tags": ["multi-hop", "combined"]
+    },
+    {
+      "id": "agent-combined-05",
+      "question": "What environment variables does this project need, and where are they used in the code?",
+      "expected_tools": ["search_code", "read_file"],
+      "tags": ["multi-hop", "combined"]
+    }
+  ]
+}

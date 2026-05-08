@@ -1,14 +1,27 @@
 """SQLAlchemy ORM base, shared column mixins, and domain models.
 
 Phase 1 tables: repositories, files, chunks (with pgvector embeddings).
+Phase 2 additions: chunk metadata (symbols, imports, tsvector), eval_runs.
 """
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pgvector.sqlalchemy import Vector  # type: ignore[import-untyped]
 from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.types import UserDefinedType
+
+
+class TSVector(UserDefinedType[Any]):
+    """SQLAlchemy type for PostgreSQL tsvector columns."""
+
+    cache_ok = True
+
+    def get_col_spec(self, **kw: Any) -> str:
+        return "TSVECTOR"
 
 
 class Base(DeclarativeBase):
@@ -119,6 +132,11 @@ class Chunk(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=True,
     )
 
+    # Phase 2: AST-enriched metadata
+    symbols_defined: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True, default=None)
+    imports: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True, default=None)
+    search_vector: Mapped[Any] = mapped_column(TSVector(), nullable=True)
+
     file: Mapped["File"] = relationship(back_populates="chunks")
 
     __table_args__ = (
@@ -131,7 +149,29 @@ class Chunk(Base, UUIDPrimaryKeyMixin, TimestampMixin):
             postgresql_with={"m": 16, "ef_construction": 64},
             postgresql_ops={"embedding": "vector_cosine_ops"},
         ),
+        Index(
+            "ix_chunks_search_vector",
+            "search_vector",
+            postgresql_using="gin",
+        ),
     )
 
     def __repr__(self) -> str:
         return f"<Chunk file_id={self.file_id!r} lines={self.start_line}-{self.end_line}>"
+
+
+class EvalRun(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """A single evaluation run with RAGAS metrics."""
+
+    __tablename__ = "eval_runs"
+
+    repository_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("repositories.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    metrics: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    case_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    def __repr__(self) -> str:
+        return f"<EvalRun {self.id!r} cases={self.case_count}>"

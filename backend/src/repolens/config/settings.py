@@ -55,6 +55,42 @@ class Settings(BaseSettings):
     chunk_overlap: int = 20
     embedding_batch_size: int = 100
 
+    # --- Neo4j (Phase 3+) ---
+    neo4j_uri: str = "bolt://localhost:7687"
+    neo4j_user: str = "neo4j"
+    neo4j_password: str = "repolens"  # noqa: S105
+
+    # --- Agent ---
+    agent_max_steps: int = 5
+    agent_max_tokens: int = 16000
+    agent_model: str = "claude-sonnet-4-6"
+
+    # --- Retrieval ---
+    retrieval_top_k: int = 20
+    retrieval_vector_weight: float = 1.0
+    retrieval_lexical_weight: float = 1.0
+    rrf_k: int = 60
+    reranker_model: str = "BAAI/bge-reranker-base"
+    reranker_top_n: int = 5
+    reranker_enabled: bool = False
+
+    # --- Observability ---
+    otel_enabled: bool = False
+    otel_service_name: str = "repolens-api"
+    otel_exporter_endpoint: str = "http://localhost:4317"
+    langsmith_api_key: str = ""
+    langsmith_project: str = "repolens"
+
+    # --- Cache ---
+    cache_enabled: bool = True
+    cache_embedding_ttl: int = 86400  # 24 hours
+    cache_llm_ttl: int = 3600  # 1 hour
+
+    # --- Rate limiting ---
+    rate_limit_enabled: bool = True
+    rate_limit_per_minute: int = 30
+    rate_limit_burst: int = 10
+
     # --- Server ---
     host: str = "0.0.0.0"  # noqa: S104 — bind all interfaces intentionally for Docker
     port: int = 8000

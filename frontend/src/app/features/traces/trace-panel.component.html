@@ -1,0 +1,108 @@
+<div class="flex flex-col h-full">
+  <!-- Header -->
+  <div class="flex items-center justify-between pb-3 mb-3 border-b"
+       style="border-color: var(--color-border)">
+    <h2 class="text-sm font-semibold uppercase"
+        style="color: var(--color-text-muted)">
+      Agent Trace
+    </h2>
+    <button class="text-xs px-2 py-0.5 rounded"
+            style="color: var(--color-text-muted)"
+            (click)="collapsed.set(!collapsed())">
+      {{ collapsed() ? 'Expand' : 'Collapse' }}
+    </button>
+  </div>
+
+  @if (!collapsed()) {
+    <div class="flex-1 overflow-y-auto space-y-3">
+
+      <!-- Tool calls -->
+      @for (tc of toolCalls(); track tc.step) {
+        <div class="rounded border text-xs"
+             style="border-color: var(--color-border)">
+          <div class="flex items-center gap-2 px-3 py-1.5"
+               style="background: var(--color-surface); border-bottom: 1px solid var(--color-border)">
+            @if (tc.status === 'running') {
+              <span class="inline-block h-2 w-2 rounded-full animate-pulse"
+                    style="background: var(--color-primary)"></span>
+            } @else {
+              <span class="inline-block h-2 w-2 rounded-full"
+                    style="background: var(--color-success)"></span>
+            }
+            <span class="font-mono font-medium" style="color: var(--color-text)">
+              {{ tc.tool }}
+            </span>
+            <span class="text-xs" style="color: var(--color-text-muted)">
+              step {{ tc.step + 1 }}
+            </span>
+          </div>
+          <!-- Tool input -->
+          <div class="px-3 py-1.5" style="background: var(--color-surface-alt)">
+            <p class="font-mono text-xs break-all" style="color: var(--color-text-muted)">
+              {{ formatInput(tc.input) }}
+            </p>
+          </div>
+          <!-- Tool result -->
+          @if (tc.result) {
+            <pre class="px-3 py-1.5 m-0 overflow-x-auto text-xs leading-relaxed max-h-40 overflow-y-auto"
+                 style="background: var(--color-surface-alt); color: var(--color-text); font-size: 10px; border-top: 1px solid var(--color-border)"
+            >{{ tc.result }}</pre>
+          }
+        </div>
+      }
+
+      <!-- Metrics -->
+      @if (metrics()) {
+        <div class="rounded px-3 py-1.5 text-xs"
+             style="background: var(--color-surface-alt); color: var(--color-text-muted)">
+          {{ metrics()!.steps }} tool calls in {{ metrics()!.elapsed_seconds }}s
+        </div>
+      }
+
+      <!-- Retrieved chunks -->
+      @if (sources().length > 0) {
+        <div class="pt-2 border-t" style="border-color: var(--color-border)">
+          <p class="text-xs font-semibold uppercase mb-2" style="color: var(--color-text-muted)">
+            Retrieved Chunks ({{ sources().length }})
+          </p>
+        </div>
+      }
+
+      @for (src of sources(); track $index) {
+        <div class="rounded border text-xs"
+             style="border-color: var(--color-border)"
+             [id]="'chunk-' + $index"
+             [class.ring-2]="focusedIndex() === $index"
+             [style.--tw-ring-color]="'var(--color-primary)'">
+          <div class="flex items-center justify-between px-3 py-1.5"
+               style="background: var(--color-surface); border-bottom: 1px solid var(--color-border)">
+            <span class="font-mono font-medium truncate" style="color: var(--color-text)">
+              {{ src.file_path }}:{{ src.start_line }}-{{ src.end_line }}
+            </span>
+            <div class="flex items-center gap-2 shrink-0 ml-2">
+              @if (src.language) {
+                <span class="rounded px-1.5 py-0.5"
+                      style="background: var(--color-surface-alt); color: var(--color-text-muted)">
+                  {{ src.language }}
+                </span>
+              }
+              <span class="font-mono" style="color: var(--color-text-muted)">
+                {{ (src.score * 100).toFixed(1) }}%
+              </span>
+            </div>
+          </div>
+          <pre class="overflow-x-auto p-3 m-0 leading-relaxed"
+               style="background: var(--color-surface-alt); color: var(--color-text); font-size: 11px"
+          ><code [innerHTML]="highlightCode(src.content, src.language)"></code></pre>
+        </div>
+      }
+
+      @if (toolCalls().length === 0 && sources().length === 0) {
+        <p class="text-xs text-center py-8"
+           style="color: var(--color-text-muted)">
+          Ask a question to see the agent's reasoning here.
+        </p>
+      }
+    </div>
+  }
+</div>

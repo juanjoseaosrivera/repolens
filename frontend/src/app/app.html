@@ -1,29 +1,47 @@
-<!-- Layout shell: top bar / left rail (repo selector) / chat surface / trace panel placeholder -->
+<!-- Skip to content link (a11y) -->
+<a class="skip-link" href="#main-chat">Skip to chat</a>
+
+<!-- Keyboard shortcuts overlay -->
+<rl-keyboard-shortcuts />
+
+<!-- Layout shell -->
 <div class="flex h-screen flex-col">
   <!-- Top bar -->
   <header class="flex items-center justify-between border-b px-6 py-3"
-          style="border-color: var(--color-border)">
+          style="border-color: var(--color-border)"
+          role="banner">
     <h1 class="text-lg font-semibold">RepoLens</h1>
-    <span class="text-sm" style="color: var(--color-text-muted)">v0.1.0</span>
+    <div class="flex items-center gap-3">
+      <rl-theme-toggle />
+      <button class="rounded p-1.5 text-sm"
+              style="color: var(--color-text-muted)"
+              title="Keyboard shortcuts (?)"
+              aria-label="Keyboard shortcuts">?</button>
+      <span class="text-sm" style="color: var(--color-text-muted)">v0.4.0</span>
+    </div>
   </header>
 
   <!-- Main content area -->
   <div class="flex flex-1 overflow-hidden">
     <!-- Left rail: repository selector -->
-    <aside class="hidden w-64 overflow-y-auto border-r p-4 md:block"
-           style="border-color: var(--color-border); background: var(--color-surface-alt)">
+    <nav class="hidden w-64 overflow-y-auto border-r p-4 md:block"
+         style="border-color: var(--color-border); background: var(--color-surface-alt)"
+         role="navigation"
+         aria-label="Repository selector">
       <rl-repo-selector (repoSelected)="onRepoSelected($event)" />
-    </aside>
+    </nav>
 
     <!-- Chat surface -->
-    <main class="flex-1 overflow-auto">
+    <main id="main-chat" class="flex-1 overflow-auto" role="main">
       <router-outlet />
     </main>
 
-    <!-- Trace panel placeholder (Phase 2) -->
-    <aside class="hidden w-80 border-l p-4 lg:block"
-           style="border-color: var(--color-border); background: var(--color-surface-alt)">
-      <p class="text-sm" style="color: var(--color-text-muted)">Trace panel (Phase 2)</p>
+    <!-- Trace panel -->
+    <aside class="hidden w-96 overflow-y-auto border-l p-4 lg:block"
+           style="border-color: var(--color-border); background: var(--color-surface-alt)"
+           role="complementary"
+           aria-label="Agent trace panel">
+      <rl-trace-panel />
     </aside>
   </div>
 </div>

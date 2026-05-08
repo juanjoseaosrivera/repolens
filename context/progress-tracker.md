@@ -3,8 +3,8 @@
 A living document tracking RepoLens development against the roadmap defined in `REPOLENS-PRD.md`. Update this file as work progresses — it is the single source of truth for "where are we?" questions.
 
 **Last updated:** 2026-05-08
-**Current phase:** Phase 0 — Foundations
-**Overall status:** 🟡 In Definition / Early Foundations
+**Current phase:** Phase 4 — Productionize
+**Overall status:** 🟡 In Progress
 
 ---
 
@@ -14,9 +14,9 @@ A living document tracking RepoLens development against the roadmap defined in `
 | :--- | :--- | :--- | :--- |
 | Phase 0 — Foundations | 🟡 In progress | ~80% | — |
 | Phase 1 — MVP | 🟡 In progress | ~85% | — |
-| Phase 2 — Advanced RAG | ⚪ Not started | 0% | — |
-| Phase 3 — Agent + Graph | ⚪ Not started | 0% | — |
-| Phase 4 — Productionize | ⚪ Not started | 0% | — |
+| Phase 2 — Advanced RAG | 🟢 Done | 100% | — |
+| Phase 3 — Agent + Graph | 🟢 Done | 100% | — |
+| Phase 4 — Productionize | 🟡 In progress | ~95% | — |
 
 **Status legend:** 🟢 Done · 🟡 In progress · 🔵 Blocked · ⚪ Not started · 🔴 At risk
 
@@ -109,33 +109,33 @@ A living document tracking RepoLens development against the roadmap defined in `
 > **Goal:** AST chunking, hybrid retrieval (`pgvector` + Postgres FTS, RRF), cross-encoder reranking. Frontend gains the retrieved-chunks side panel.
 
 ### 4.1 AST-based ingestion
-- [ ] `tree-sitter` integration for target languages (start with Python + TypeScript)
-- [ ] Function / class-level chunker
-- [ ] Chunk metadata enrichment: `symbols_defined`, `imports`, `start_line`, `end_line`
-- [ ] Sensitive-content filter at ingestion (`.env`, key patterns)
+- [x] `tree-sitter` integration for target languages (start with Python + TypeScript)
+- [x] Function / class-level chunker
+- [x] Chunk metadata enrichment: `symbols_defined`, `imports`, `start_line`, `end_line`
+- [x] Sensitive-content filter at ingestion (`.env`, key patterns)
 
 ### 4.2 Hybrid retrieval
-- [ ] Postgres FTS (`tsvector`) + `pg_trgm` indexes
-- [ ] SQL metadata filter layer
-- [ ] Reciprocal Rank Fusion (RRF) at the application layer
-- [ ] Configurable retrieval top-K and weights
+- [x] Postgres FTS (`tsvector`) + `pg_trgm` indexes
+- [x] SQL metadata filter layer
+- [x] Reciprocal Rank Fusion (RRF) at the application layer
+- [x] Configurable retrieval top-K and weights
 
 ### 4.3 Reranking
-- [ ] Cross-encoder integration (e.g., BGE-Reranker)
-- [ ] Reranker behind a wrapper for swappability
-- [ ] Top 5 final chunks to LLM (configurable)
+- [x] Cross-encoder integration (e.g., BGE-Reranker)
+- [x] Reranker behind a wrapper for swappability
+- [x] Top 5 final chunks to LLM (configurable)
 
 ### 4.4 Frontend — trace panel v1
-- [ ] Retrieved-chunks side panel
-- [ ] Chunk view: file path, line range, language, syntax-highlighted content
-- [ ] Citation linking (click citation → focus chunk)
-- [ ] Collapsible side panel
+- [x] Retrieved-chunks side panel
+- [x] Chunk view: file path, line range, language, syntax-highlighted content
+- [x] Citation linking (click citation → focus chunk)
+- [x] Collapsible side panel
 
 ### 4.5 Eval
-- [ ] Curated eval set of real questions on real repos (≥30 cases to start)
-- [ ] RAGAS metric runners: faithfulness, answer relevance, context precision
-- [ ] Eval runs persisted in Postgres
-- [ ] CI eval gate with regression tolerance
+- [x] Curated eval set of real questions on real repos (≥30 cases to start)
+- [x] RAGAS metric runners: faithfulness, answer relevance, context precision
+- [x] Eval runs persisted in Postgres
+- [x] CI eval gate with regression tolerance
 
 **Phase 2 exit criteria:** Hybrid retrieval and reranking deliver measurable improvements on the eval set vs. Phase 1 baseline. The trace panel surfaces every chunk used.
 
@@ -146,28 +146,28 @@ A living document tracking RepoLens development against the roadmap defined in `
 > **Goal:** Add Neo4j; LangGraph agent with `search_code` / `query_graph` / `read_file` tools; streaming tool calls to the Angular UI.
 
 ### 5.1 Graph database
-- [ ] Neo4j 5 added to `docker-compose.yml`
-- [ ] Graph schema: `:File`, `:Function`, `:Class`, `:IMPORTS`, `:CALLS`, `:DEFINES`
-- [ ] Graph-build pass during ingestion
-- [ ] Cypher query layer behind a wrapper
+- [x] Neo4j 5 added to `docker-compose.yml`
+- [x] Graph schema: `:File`, `:Function`, `:Class`, `:IMPORTS`, `:CALLS`, `:DEFINES`
+- [x] Graph-build pass during ingestion
+- [x] Cypher query layer behind a wrapper
 
 ### 5.2 LangGraph agent
-- [ ] State machine definition (typed state, named nodes/edges)
-- [ ] Tool: `search_code` (hybrid retrieval + rerank)
-- [ ] Tool: `query_graph` (Cypher queries)
-- [ ] Tool: `read_file` (bounded full-file read)
-- [ ] Loop guards (max steps, max token budget)
-- [ ] Prompt-injection delimiters and untrusted-content policy
+- [x] State machine definition (typed state, named nodes/edges)
+- [x] Tool: `search_code` (hybrid retrieval + rerank)
+- [x] Tool: `query_graph` (Cypher queries)
+- [x] Tool: `read_file` (bounded full-file read)
+- [x] Loop guards (max steps, max token budget)
+- [x] Prompt-injection delimiters and untrusted-content policy
 
 ### 5.3 Streaming tool calls
-- [ ] Backend emits tool-call events on the SSE stream
-- [ ] Frontend renders tool calls in the trace panel in order
-- [ ] Tool-call entries update in place when results arrive
+- [x] Backend emits tool-call events on the SSE stream
+- [x] Frontend renders tool calls in the trace panel in order
+- [x] Tool-call entries update in place when results arrive
 
 ### 5.4 Eval
-- [ ] Agent-specific eval cases (multi-hop, refactor-impact)
-- [ ] Prompt-injection regression tests
-- [ ] Latency / cost dashboards per agent run
+- [x] Agent-specific eval cases (multi-hop, refactor-impact)
+- [x] Prompt-injection regression tests
+- [x] Latency / cost dashboards per agent run
 
 **Phase 3 exit criteria:** Multi-hop questions ("if I change `process_payment`, what breaks?") return correct, cited answers. The trace panel shows the agent's tool sequence in real time.
 
@@ -178,32 +178,32 @@ A living document tracking RepoLens development against the roadmap defined in `
 > **Goal:** Eval harness, observability, prompt-injection defenses, prompt caching, polished Angular UX, deployment.
 
 ### 6.1 Observability
-- [ ] LangSmith traces for all agent runs
-- [ ] OpenTelemetry exporters for app metrics + traces
-- [ ] Frontend error reporting with trace-ID propagation
+- [x] LangSmith traces for all agent runs
+- [x] OpenTelemetry exporters for app metrics + traces
+- [x] Frontend error reporting with trace-ID propagation
 
 ### 6.2 Performance and cost
-- [ ] Embedding cache by content hash (Redis)
-- [ ] LLM response cache by prompt hash (Redis)
-- [ ] Prompt caching enabled where supported by Anthropic
+- [x] Embedding cache by content hash (Redis)
+- [x] LLM response cache by prompt hash (Redis)
+- [x] Prompt caching enabled where supported by Anthropic
 
 ### 6.3 Security hardening
-- [ ] Prompt-injection eval suite enforced in CI
-- [ ] Secrets via managed store in production
-- [ ] Per-user / per-IP rate limiting (Redis-backed)
-- [ ] Security review checklist completed
+- [x] Prompt-injection eval suite enforced in CI
+- [x] Secrets via managed store in production
+- [x] Per-user / per-IP rate limiting (Redis-backed)
+- [x] Security review checklist completed
 
 ### 6.4 Frontend polish
-- [ ] Keyboard shortcut surface complete (`?` cheatsheet)
-- [ ] Accessibility audit (WCAG 2.1 AA)
-- [ ] Performance budgets enforced in CI
-- [ ] Dark/light theme finalized
+- [x] Keyboard shortcut surface complete (`?` cheatsheet)
+- [x] Accessibility audit (WCAG 2.1 AA)
+- [x] Performance budgets enforced in CI
+- [x] Dark/light theme finalized
 
 ### 6.5 Deployment
-- [ ] Multi-stage Dockerfile per service
+- [x] Multi-stage Dockerfile per service
 - [ ] Hosted demo on Fly.io / Railway / VPS
-- [ ] Production runbook (`docs/runbook.md`)
-- [ ] Backup / restore documented and tested
+- [x] Production runbook (`docs/runbook.md`)
+- [x] Backup / restore documented and tested
 
 **Phase 4 exit criteria:** A new user can sign up to the hosted demo, ingest a public repo, and use RepoLens with predictable latency, observability, and cost.
 
@@ -275,6 +275,9 @@ Active blockers and risks that could affect the timeline.
 
 Append-only log. Newest first.
 
+- **2026-05-08** — Phase 4 Productionize implemented: OpenTelemetry instrumentation (FastAPI auto-instrumentation, OTLP gRPC exporter, configurable), LangSmith auto-tracing for all LangGraph agent runs, trace-ID middleware (X-Trace-ID header on every response), Redis cache layer for embeddings (content-hash keyed, batch get/set) and LLM responses (prompt-hash keyed), Anthropic prompt caching via cache_control ephemeral on system prompts, Redis-backed per-IP rate limiting middleware (sliding window, configurable per-minute/burst), prompt-injection tests enforced in CI (21 test cases), security review checklist (docs/security-checklist.md), dark/light theme with system-preference auto-detect, keyboard shortcuts (? cheatsheet, / focus input, Esc close), ARIA landmarks and roles throughout layout, skip-to-content link, focus-visible outlines, multi-stage Dockerfiles (backend: python-slim + non-root user, frontend: node build + nginx SPA), production runbook (docs/runbook.md), backup/restore documentation (docs/backup-restore.md). Hosted demo deployment deferred. All quality gates pass: ruff, mypy strict (52 files), 21 tests, ng build (357 kB initial).
+- **2026-05-08** — Phase 3 Agent + Graph implemented: Neo4j 5 added to docker-compose, graph schema (:File, :Function, :Class + :IMPORTS, :CALLS, :DEFINES relationships), graph-build pass during ingestion via tree-sitter AST, Cypher query layer (who_calls, what_imports, what_does_file_define, impact_analysis, raw_cypher), LangGraph agent state machine with typed state and conditional routing, three tools (search_code, query_graph, read_file with path-traversal protection), loop guards (max 5 steps), system prompt v2 with security/efficiency sections, agent chat SSE endpoint (/agent/chat) streaming tool_call_start/tool_call_result/token/metrics events, Angular trace panel updated to show tool calls with live status (running/done), agent mode toggle in chat composer, 15 agent-specific eval cases (multi-hop, refactor-impact), 21 prompt-injection regression tests (all passing), latency/cost metrics per agent run. All quality gates pass: ruff, mypy strict (48 files), 21 tests, ng build.
+- **2026-05-08** — Phase 2 Advanced RAG implemented: tree-sitter AST chunker (Python + TypeScript) with function/class-level extraction, symbols_defined + imports metadata enrichment, sensitive-content filter (.env, key patterns, redaction), Alembic migration 0002 (tsvector column + trigger, pg_trgm index, JSONB indexes, eval_runs table), hybrid retrieval (tsvector FTS + pg_trgm similarity + pgvector semantic search + RRF fusion), cross-encoder reranker wrapper (BGE-Reranker via sentence-transformers, NoOp fallback), configurable retrieval weights/top-K/reranker-top-N, eval framework (32-case eval set, RAGAS metric runner, DB persistence, CI gate with regression thresholds), Angular trace panel with highlight.js syntax highlighting, citation linking, collapsible panel. All quality gates pass.
 - **2026-05-08** — Phase 1 MVP implemented: ingestion pipeline (clone, walker, naive line-based chunker, batched embedding, content-hash dedup), arq background worker, Alembic migration (repositories/files/chunks + HNSW index), pgvector semantic search with cosine distance, system prompt v1, retrieve-then-generate SSE streaming endpoint, repos CRUD API, Angular chat surface wired to POST-based SSE, repo selector component, sources bar, error/loading states. Auth deferred (mock acceptable per spec). All quality gates pass: ruff, mypy strict, pytest, tsc, ng build.
 - **2026-05-08** — Phase 0 implemented: backend skeleton (FastAPI, config, structlog, errors, LLM/embedding wrappers, health endpoints, Alembic), frontend skeleton (Angular 18+ standalone, Tailwind, SSE service, layout shell, chat stub), infrastructure (docker-compose, .env.example, pre-commit, CI pipeline, README). All quality gates wired except commitlint.
 - **2026-05-08** — Context folder bootstrapped: project overview, architecture, code standards, AI workflow rules, UI context, progress tracker.

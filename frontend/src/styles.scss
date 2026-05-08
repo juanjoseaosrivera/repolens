@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Design tokens — colors, spacing, typography come from here. No hex codes scattered through templates. */
+/* Design tokens — light theme (default) */
 :root {
   --color-primary: #6366f1;
   --color-primary-hover: #4f46e5;
@@ -15,6 +15,57 @@
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
 }
 
+/* Dark theme */
+[data-theme="dark"] {
+  --color-primary: #818cf8;
+  --color-primary-hover: #6366f1;
+  --color-surface: #0f172a;
+  --color-surface-alt: #1e293b;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-border: #334155;
+  --color-error: #f87171;
+  --color-success: #4ade80;
+}
+
+/* System preference: auto-apply dark if user prefers */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-primary: #818cf8;
+    --color-primary-hover: #6366f1;
+    --color-surface: #0f172a;
+    --color-surface-alt: #1e293b;
+    --color-text: #f1f5f9;
+    --color-text-muted: #94a3b8;
+    --color-border: #334155;
+    --color-error: #f87171;
+    --color-success: #4ade80;
+  }
+}
+
+/* Focus visible ring for keyboard navigation (a11y) */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Skip to content link (a11y) */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  background: var(--color-primary);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+
+  &:focus {
+    top: 0;
+  }
+}
+
 html,
 body {
   height: 100%;
@@ -22,4 +73,5 @@ body {
   font-family: var(--font-sans);
   color: var(--color-text);
   background-color: var(--color-surface);
+  transition: background-color 0.2s, color 0.2s;
 }

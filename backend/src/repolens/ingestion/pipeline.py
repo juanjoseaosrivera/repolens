@@ -1,6 +1,7 @@
 """Ingestion pipeline — orchestrates clone → walk → chunk → embed → store.
 
-Called by the arq background worker or directly for testing.
+Phase 2: uses AST chunker with naive fallback, sensitive-content filter,
+and enriches chunks with symbols_defined / imports metadata.
 """
 
 import hashlib
@@ -12,8 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from repolens.config import get_settings
 from repolens.errors import IngestionError
-from repolens.ingestion.chunker import chunk_file
+from repolens.ingestion.ast_chunker import ast_chunk_file
 from repolens.ingestion.clone import clone_repo
+from repolens.ingestion.filter import redact_secrets, should_skip_file
 from repolens.ingestion.walker import walk_repo
 from repolens.llm import EmbeddingClient
 from repolens.storage.models import Chunk, File, Repository
@@ -29,7 +31,7 @@ async def run_ingestion(
 
     1. Set status to ``ingesting``.
     2. Clone / pull the repo.
-    3. Walk files, chunk, embed (batched), and store.
+    3. Walk files, chunk (AST or naive), embed (batched), and store.
     4. Set status to ``ready`` (or ``failed`` on error).
     """
     async with session_factory() as session:
@@ -91,12 +93,18 @@ async def _ingest(
         repo.clone_path = str(clone_path)
         repo.content_hash = commit_hash
 
-        # Walk → chunk
-        all_chunks: list[tuple[File, list[tuple[str, int, int]]]] = []
+        # Walk → filter → chunk (AST with naive fallback)
+        all_chunks: list[tuple[File, list[tuple[str, int, int, list[str], list[str]]]]] = []
         file_count = 0
         chunk_count = 0
+        skipped_sensitive = 0
 
         for rel_path, content, language in walk_repo(clone_path):
+            # Sensitive-content filter
+            if should_skip_file(rel_path):
+                skipped_sensitive += 1
+                continue
+
             content_hash = hashlib.sha256(content.encode()).hexdigest()
 
             file_obj = File(
@@ -109,10 +117,22 @@ async def _ingest(
             session.add(file_obj)
             file_count += 1
 
-            raw_chunks = chunk_file(content)
-            chunk_data: list[tuple[str, int, int]] = []
-            for rc in raw_chunks:
-                chunk_data.append((rc.content, rc.start_line, rc.end_line))
+            # Redact secrets from content before chunking
+            safe_content = redact_secrets(content)
+
+            # AST chunker (falls back to naive for unsupported languages)
+            ast_chunks = ast_chunk_file(safe_content, language)
+            chunk_data: list[tuple[str, int, int, list[str], list[str]]] = []
+            for ac in ast_chunks:
+                chunk_data.append(
+                    (
+                        ac.content,
+                        ac.start_line,
+                        ac.end_line,
+                        ac.symbols_defined,
+                        ac.imports,
+                    )
+                )
                 chunk_count += 1
 
             if chunk_data:
@@ -123,17 +143,18 @@ async def _ingest(
             repository_id=str(repository_id),
             files=file_count,
             chunks=chunk_count,
+            skipped_sensitive=skipped_sensitive,
         )
 
         # Embed in batches and store chunks
         batch_size = settings.embedding_batch_size
         flat_texts: list[str] = []
-        flat_meta: list[tuple[File, int, int, str]] = []
+        flat_meta: list[tuple[File, int, int, str, list[str], list[str]]] = []
 
         for file_obj, chunk_data in all_chunks:
-            for text, start, end in chunk_data:
+            for text, start, end, symbols, imports in chunk_data:
                 flat_texts.append(text)
-                flat_meta.append((file_obj, start, end, text))
+                flat_meta.append((file_obj, start, end, text, symbols, imports))
 
         for i in range(0, len(flat_texts), batch_size):
             batch_texts = flat_texts[i : i + batch_size]
@@ -141,7 +162,9 @@ async def _ingest(
 
             vectors = await embedder.embed(batch_texts)
 
-            for (file_obj, start, end, text), vector in zip(batch_meta, vectors, strict=True):
+            for (file_obj, start, end, text, symbols, imports), vector in zip(
+                batch_meta, vectors, strict=True
+            ):
                 chunk_hash = hashlib.sha256(text.encode()).hexdigest()
                 chunk_obj = Chunk(
                     id=uuid.uuid4(),
@@ -151,6 +174,8 @@ async def _ingest(
                     start_line=start,
                     end_line=end,
                     embedding=vector,
+                    symbols_defined=symbols if symbols else None,
+                    imports=imports if imports else None,
                 )
                 session.add(chunk_obj)
 
@@ -163,6 +188,14 @@ async def _ingest(
 
         repo.status = "ready"
         await session.commit()
+
+        # Phase 3: build dependency graph in Neo4j (best-effort)
+        try:
+            from repolens.ingestion.graph_pass import build_graph_from_repo
+
+            await build_graph_from_repo(str(repository_id), clone_path)
+        except Exception:
+            log.warning("pipeline.graph_build_skipped", repository_id=str(repository_id))
 
         log.info(
             "pipeline.complete",

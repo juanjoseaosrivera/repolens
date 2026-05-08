@@ -1,4 +1,4 @@
-"""Chat / Q&A endpoint — retrieve-then-generate with SSE streaming."""
+"""Chat / Q&A endpoint — hybrid retrieve → rerank → generate with SSE streaming."""
 
 import json
 from collections.abc import AsyncIterator
@@ -12,7 +12,8 @@ from repolens.agent.prompts import SYSTEM_PROMPT_V1
 from repolens.api.deps import get_completion_client, get_embedding_client, get_session
 from repolens.api.schemas import ChatRequest
 from repolens.llm import CompletionClient, EmbeddingClient
-from repolens.retrieval.vector import semantic_search
+from repolens.retrieval.hybrid import hybrid_search
+from repolens.retrieval.reranker import get_reranker
 from repolens.storage.models import Repository
 
 log = structlog.get_logger(__name__)
@@ -38,19 +39,23 @@ async def chat(
             detail=f"Repository is not ready (status: {repo.status})",
         )
 
-    # Retrieve relevant chunks
-    chunks = await semantic_search(
+    # Phase 2: Hybrid retrieval (vector + lexical, fused with RRF)
+    candidates = await hybrid_search(
         body.question,
         body.repository_id,
         session,
         embedder=embedding_client,
     )
 
-    if not chunks:
+    if not candidates:
         raise HTTPException(
             status_code=404,
             detail="No relevant code found. The repository may not have been ingested yet.",
         )
+
+    # Phase 2: Cross-encoder reranking (top-N final chunks)
+    reranker = get_reranker()
+    chunks = reranker.rerank(body.question, candidates)
 
     # Build context string from retrieved chunks
     context_parts: list[str] = []
@@ -65,6 +70,8 @@ async def chat(
                 "file_path": chunk.file_path,
                 "start_line": chunk.start_line,
                 "end_line": chunk.end_line,
+                "content": chunk.content,
+                "language": chunk.language,
                 "score": round(chunk.score, 4),
             }
         )
@@ -78,7 +85,8 @@ async def chat(
         "chat.request",
         repository_id=str(body.repository_id),
         question_len=len(body.question),
-        context_chunks=len(chunks),
+        candidates=len(candidates),
+        reranked=len(chunks),
     )
 
     return StreamingResponse(
@@ -98,7 +106,7 @@ async def _stream_response(
     sources: list[dict[str, object]],
 ) -> AsyncIterator[str]:
     """Yield SSE events: sources metadata, streamed tokens, then [DONE]."""
-    # First event: sources metadata
+    # First event: sources metadata (now includes content + language for trace panel)
     yield f"data: {json.dumps({'type': 'sources', 'data': sources})}\n\n"
 
     # Stream tokens

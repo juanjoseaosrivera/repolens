@@ -1,0 +1,198 @@
+{
+  "description": "RepoLens evaluation set — questions about common Python/TypeScript patterns",
+  "version": "1.0.0",
+  "cases": [
+    {
+      "id": "py-imports-01",
+      "question": "Where are the main imports defined?",
+      "expected_files": ["__init__.py"],
+      "tags": ["python", "imports"]
+    },
+    {
+      "id": "py-config-01",
+      "question": "How is configuration loaded?",
+      "expected_files": ["config.py", "settings.py"],
+      "tags": ["python", "config"]
+    },
+    {
+      "id": "py-auth-01",
+      "question": "Where is authentication handled?",
+      "expected_files": ["auth.py", "middleware.py", "security.py"],
+      "tags": ["python", "auth"]
+    },
+    {
+      "id": "py-db-01",
+      "question": "How does the database connection work?",
+      "expected_files": ["db.py", "database.py", "engine.py", "models.py"],
+      "tags": ["python", "database"]
+    },
+    {
+      "id": "py-routes-01",
+      "question": "What API endpoints are defined?",
+      "expected_files": ["routes.py", "views.py", "app.py", "api.py"],
+      "tags": ["python", "api"]
+    },
+    {
+      "id": "py-error-01",
+      "question": "How are errors handled?",
+      "expected_files": ["errors.py", "exceptions.py", "handlers.py"],
+      "tags": ["python", "errors"]
+    },
+    {
+      "id": "py-models-01",
+      "question": "What data models exist?",
+      "expected_files": ["models.py", "schemas.py"],
+      "tags": ["python", "models"]
+    },
+    {
+      "id": "py-tests-01",
+      "question": "How are tests organized?",
+      "expected_files": ["conftest.py", "test_"],
+      "tags": ["python", "testing"]
+    },
+    {
+      "id": "py-logging-01",
+      "question": "How is logging configured?",
+      "expected_files": ["logging.py", "logger.py"],
+      "tags": ["python", "observability"]
+    },
+    {
+      "id": "py-cli-01",
+      "question": "Is there a CLI interface?",
+      "expected_files": ["cli.py", "__main__.py"],
+      "tags": ["python", "cli"]
+    },
+    {
+      "id": "py-middleware-01",
+      "question": "What middleware is used?",
+      "expected_files": ["middleware.py", "app.py"],
+      "tags": ["python", "middleware"]
+    },
+    {
+      "id": "py-deps-01",
+      "question": "What are the project dependencies?",
+      "expected_files": ["pyproject.toml", "requirements.txt", "setup.py"],
+      "tags": ["python", "dependencies"]
+    },
+    {
+      "id": "py-migrations-01",
+      "question": "How are database migrations managed?",
+      "expected_files": ["alembic", "migrations"],
+      "tags": ["python", "migrations"]
+    },
+    {
+      "id": "py-serialization-01",
+      "question": "How is data serialized for the API?",
+      "expected_files": ["schemas.py", "serializers.py"],
+      "tags": ["python", "serialization"]
+    },
+    {
+      "id": "py-caching-01",
+      "question": "Is there any caching logic?",
+      "expected_files": ["cache.py", "redis.py"],
+      "tags": ["python", "caching"]
+    },
+    {
+      "id": "ts-components-01",
+      "question": "What UI components exist?",
+      "expected_files": [".component.ts"],
+      "tags": ["typescript", "components"]
+    },
+    {
+      "id": "ts-services-01",
+      "question": "What services are defined?",
+      "expected_files": [".service.ts"],
+      "tags": ["typescript", "services"]
+    },
+    {
+      "id": "ts-routing-01",
+      "question": "How is routing configured?",
+      "expected_files": ["routes.ts", "router.ts", "app-routing"],
+      "tags": ["typescript", "routing"]
+    },
+    {
+      "id": "ts-state-01",
+      "question": "How is application state managed?",
+      "expected_files": ["store", "state", "signal"],
+      "tags": ["typescript", "state"]
+    },
+    {
+      "id": "ts-http-01",
+      "question": "How does the frontend make HTTP requests?",
+      "expected_files": ["api.service.ts", "http"],
+      "tags": ["typescript", "http"]
+    },
+    {
+      "id": "ts-styles-01",
+      "question": "How is styling organized?",
+      "expected_files": ["styles.scss", "tailwind", ".css"],
+      "tags": ["typescript", "styling"]
+    },
+    {
+      "id": "ts-testing-01",
+      "question": "How are frontend tests configured?",
+      "expected_files": [".spec.ts", "test"],
+      "tags": ["typescript", "testing"]
+    },
+    {
+      "id": "gen-architecture-01",
+      "question": "What is the overall architecture of this project?",
+      "expected_files": ["app.py", "main.ts", "app.ts"],
+      "tags": ["general", "architecture"]
+    },
+    {
+      "id": "gen-docker-01",
+      "question": "How is the project containerized?",
+      "expected_files": ["Dockerfile", "docker-compose", "docker"],
+      "tags": ["general", "docker"]
+    },
+    {
+      "id": "gen-ci-01",
+      "question": "What CI/CD pipeline is configured?",
+      "expected_files": [".github", "ci.yml", ".gitlab-ci"],
+      "tags": ["general", "ci"]
+    },
+    {
+      "id": "gen-env-01",
+      "question": "What environment variables does the project need?",
+      "expected_files": [".env.example", "config", "settings"],
+      "tags": ["general", "config"]
+    },
+    {
+      "id": "gen-readme-01",
+      "question": "How do I set up this project locally?",
+      "expected_files": ["README.md"],
+      "tags": ["general", "docs"]
+    },
+    {
+      "id": "py-async-01",
+      "question": "Is the backend async? How?",
+      "expected_files": ["app.py", "engine.py"],
+      "tags": ["python", "async"]
+    },
+    {
+      "id": "py-validation-01",
+      "question": "How is request validation done?",
+      "expected_files": ["schemas.py", "models.py"],
+      "tags": ["python", "validation"]
+    },
+    {
+      "id": "ts-forms-01",
+      "question": "How are forms handled in the frontend?",
+      "expected_files": [".component.ts", "form"],
+      "tags": ["typescript", "forms"]
+    },
+    {
+      "id": "gen-security-01",
+      "question": "What security measures are in place?",
+      "expected_files": ["auth", "security", "middleware", "cors"],
+      "tags": ["general", "security"]
+    },
+    {
+      "id": "py-workers-01",
+      "question": "Are there any background workers or job queues?",
+      "expected_files": ["worker.py", "tasks.py", "celery", "arq"],
+      "tags": ["python", "workers"]
+    }
+  ]
+}

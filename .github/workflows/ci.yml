@@ -47,10 +47,13 @@ jobs:
       - name: Mypy
         run: uv run mypy src/repolens/
 
-      - name: Pytest
+      - name: Unit tests
         run: uv run pytest tests/unit/ -v --tb=short
         env:
           REPOLENS_DATABASE_URL: postgresql+psycopg://repolens:repolens@localhost:5432/repolens
+
+      - name: Prompt-injection tests
+        run: uv run pytest tests/eval/test_prompt_injection.py -v --tb=short
 
   frontend:
     name: Frontend — lint, type-check, test, build
