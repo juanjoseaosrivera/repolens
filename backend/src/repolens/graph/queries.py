@@ -108,6 +108,31 @@ class GraphQueryService:
             for r in rows
         ]
 
+    async def search_nodes(self, keyword: str, repo_id: uuid.UUID) -> list[GraphNode]:
+        """Fuzzy-search functions, classes, and files whose name contains *keyword*."""
+        rows = await self._client.run(
+            "MATCH (n) "
+            "WHERE n.repo_id = $repo_id "
+            "  AND (n.name CONTAINS $keyword OR n.path CONTAINS $keyword) "
+            "RETURN labels(n)[0] AS label, "
+            "  coalesce(n.name, n.path) AS name, "
+            "  coalesce(n.file_path, n.path) AS file_path, "
+            "  n.start_line AS start_line, n.end_line AS end_line "
+            "LIMIT 20",
+            keyword=keyword,
+            repo_id=str(repo_id),
+        )
+        return [
+            GraphNode(
+                label=r["label"],
+                name=r["name"],
+                file_path=r["file_path"] or "",
+                start_line=r.get("start_line"),
+                end_line=r.get("end_line"),
+            )
+            for r in rows
+        ]
+
     async def raw_cypher(
         self, query: str, repo_id: uuid.UUID, **params: Any
     ) -> list[dict[str, Any]]:

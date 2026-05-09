@@ -19,8 +19,7 @@ router = APIRouter(prefix="/repos", tags=["repositories"])
 
 
 async def _get_arq_pool() -> ArqRedis:
-    redis_settings = WorkerSettings.redis_settings()
-    return await create_pool(redis_settings)
+    return await create_pool(WorkerSettings.redis_settings)
 
 
 @router.post("", response_model=RepoOut, status_code=201)
@@ -77,6 +76,20 @@ async def get_repo(
     if repo is None:
         raise HTTPException(status_code=404, detail="Repository not found")
     return repo
+
+
+@router.delete("/{repo_id}", status_code=204)
+async def delete_repo(
+    repo_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    """Delete a repository and all associated files/chunks (cascaded)."""
+    repo = await session.get(Repository, repo_id)
+    if repo is None:
+        raise HTTPException(status_code=404, detail="Repository not found")
+    await session.delete(repo)
+    await session.commit()
+    log.info("repos.deleted", id=str(repo_id))
 
 
 async def _enqueue_ingestion(repo_id: uuid.UUID) -> None:

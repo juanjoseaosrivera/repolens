@@ -37,7 +37,4 @@ class WorkerSettings:
     on_startup = startup
     on_shutdown = shutdown
 
-    @staticmethod
-    def redis_settings() -> RedisSettings:
-        settings = get_settings()
-        return RedisSettings.from_dsn(settings.redis_url)
+    redis_settings = RedisSettings.from_dsn(get_settings().redis_url)

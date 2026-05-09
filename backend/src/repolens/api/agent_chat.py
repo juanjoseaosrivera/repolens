@@ -87,8 +87,21 @@ async def _stream_agent(
         if kind == "on_chat_model_stream":
             # Token streaming from the LLM
             chunk = event["data"]["chunk"]
-            if hasattr(chunk, "content") and isinstance(chunk.content, str) and chunk.content:
-                yield _sse({"type": "token", "data": chunk.content})
+            if hasattr(chunk, "content"):
+                content = chunk.content
+                # Anthropic returns content as a list of blocks; extract text
+                if isinstance(content, list):
+                    text = "".join(
+                        block.get("text", "")
+                        for block in content
+                        if isinstance(block, dict) and block.get("type") == "text"
+                    )
+                elif isinstance(content, str):
+                    text = content
+                else:
+                    text = ""
+                if text:
+                    yield _sse({"type": "token", "data": text})
 
         elif kind == "on_tool_start":
             # Tool invocation starting

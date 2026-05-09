@@ -1,16 +1,22 @@
 """Agent tools — search_code, query_graph, read_file.
 
 Each tool is a LangChain-compatible tool that the LangGraph agent can invoke.
+The ``repository_id`` parameter is injected by the agent graph (not exposed to
+the LLM) via :func:`bind_repo_tools`.
 """
 
 import uuid
 from pathlib import Path
+from typing import Annotated
 
-from langchain_core.tools import tool
+from langchain_core.tools import InjectedToolArg, tool
 
 
 @tool
-async def search_code(query: str, repository_id: str) -> str:
+async def search_code(
+    query: str,
+    repository_id: Annotated[str, InjectedToolArg],
+) -> str:
     """Search the codebase for relevant code snippets.
 
     Use this when the user asks about code functionality, where something is
@@ -19,7 +25,6 @@ async def search_code(query: str, repository_id: str) -> str:
 
     Args:
         query: Natural language description of what to search for.
-        repository_id: UUID of the repository to search in.
     """
     from repolens.api.deps import get_embedding_client, get_session_factory
     from repolens.retrieval.hybrid import hybrid_search
@@ -51,7 +56,10 @@ async def search_code(query: str, repository_id: str) -> str:
 
 
 @tool
-async def query_graph(question: str, repository_id: str) -> str:
+async def query_graph(
+    question: str,
+    repository_id: Annotated[str, InjectedToolArg],
+) -> str:
     """Query the code dependency graph to find relationships between code elements.
 
     Use this for questions like "who calls function X", "what imports file Y",
@@ -59,7 +67,6 @@ async def query_graph(question: str, repository_id: str) -> str:
 
     Args:
         question: Natural language question about code relationships.
-        repository_id: UUID of the repository to query.
     """
     from repolens.graph import GraphQueryService, get_graph_client
 
@@ -112,19 +119,23 @@ async def query_graph(question: str, repository_id: str) -> str:
         return "\n".join(lines)
 
     else:
-        # Fallback: try impact analysis
-        func_name = _extract_name(question)
-        nodes = await service.impact_analysis(func_name, repo_uuid)
+        # Fallback: fuzzy search by extracted name
+        keyword = _extract_name(question)
+        nodes = await service.search_nodes(keyword, repo_uuid)
         if nodes:
-            lines = [f"Related functions for '{func_name}':"]
+            lines = [f"Graph nodes matching '{keyword}':"]
             for n in nodes:
-                lines.append(f"  - {n.name} in {n.file_path}")
+                loc = f" ({n.file_path}:{n.start_line})" if n.start_line else f" ({n.file_path})"
+                lines.append(f"  - [{n.label}] {n.name}{loc}")
             return "\n".join(lines)
         return "Could not determine a specific graph query for this question."
 
 
 @tool
-async def read_file(file_path: str, repository_id: str) -> str:
+async def read_file(
+    file_path: str,
+    repository_id: Annotated[str, InjectedToolArg],
+) -> str:
     """Read the full content of a specific file from the repository.
 
     Use this when you need to see the complete file content, not just chunks.
@@ -132,7 +143,6 @@ async def read_file(file_path: str, repository_id: str) -> str:
 
     Args:
         file_path: Relative path of the file within the repository.
-        repository_id: UUID of the repository.
     """
     from repolens.api.deps import get_session_factory
     from repolens.storage.models import Repository

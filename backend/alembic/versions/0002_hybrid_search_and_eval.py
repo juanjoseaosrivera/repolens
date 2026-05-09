@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects.postgresql import JSONB
 
 revision: str = "0002"
 down_revision: Union[str, None] = "0001"
@@ -18,8 +19,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # --- Phase 2 columns on chunks ---
-    op.add_column("chunks", sa.Column("symbols_defined", sa.JSON(), nullable=True))
-    op.add_column("chunks", sa.Column("imports", sa.JSON(), nullable=True))
+    op.add_column("chunks", sa.Column("symbols_defined", JSONB(), nullable=True))
+    op.add_column("chunks", sa.Column("imports", JSONB(), nullable=True))
 
     # tsvector column via raw SQL (SA doesn't have a native tsvector type)
     op.execute("ALTER TABLE chunks ADD COLUMN search_vector tsvector")

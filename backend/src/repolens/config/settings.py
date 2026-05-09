@@ -4,9 +4,14 @@ All configuration flows through this module. No scattered os.environ.get calls.
 """
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Resolve .env at the repo root (two levels up from this file: config/ → repolens/ → src/ → backend/ → repo root)
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+_ENV_FILE = _REPO_ROOT / ".env"
 
 
 class Settings(BaseSettings):
@@ -18,7 +23,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="REPOLENS_",
-        env_file=".env",
+        env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
         extra="ignore",
     )
